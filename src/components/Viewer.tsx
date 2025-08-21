@@ -20,6 +20,7 @@ export default function Viewer(props: ViewerProps) {
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(0);
   const [flipping, setFlipping] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
   const flipRef = useRef<any>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const documentRef = useRef<any>(null);
@@ -63,7 +64,7 @@ export default function Viewer(props: ViewerProps) {
       setOutline(await doc.getOutline());
       setPages(pages);
     })();
-  }, []);
+  }, [showSidebar]);
 
   function previousPage() {
     flipRef.current.pageFlip().flipPrev();
@@ -100,46 +101,50 @@ export default function Viewer(props: ViewerProps) {
   }
 
   return (
-    <div className='grid grid-cols-5 h-full'>
-      <div className="border-base-300 border-r-1 overflow-y-auto">
-        <h1 className="text-xl font-black p-5 pb-3">目录</h1>
-        {
-          initialized ?
-          <ul className="menu w-full">
-            {outline.map(item => 
-              <li key={item.title}>
-                {
-                  item.items.length ? 
-                  <details>
-                    <summary><a href='#' onClick={() => gotoDest(item.dest)}>{ item.title }</a></summary>
-                    <ul>
-                      { item.items.map((subitem: any) => 
-                        <li key={subitem.title}><a href='#' onClick={() => gotoDest(subitem.dest)}>{ subitem.title }</a></li>
-                      )}
-                    </ul>
-                  </details> :
-                  <a href='#' onClick={() => gotoDest(item.dest)}>{ item.title }</a>
-                }
-              </li>
-            )}
-          </ul> :
-          <div className='flex w-full flex-col gap-2 px-5 mt-3'>
-            <div className='skeleton h-6'></div>
-            <div className='skeleton h-6 ml-8'></div>
-            <div className='skeleton h-6 ml-8'></div>
-            <div className='skeleton h-6'></div>
-            <div className='skeleton h-6 ml-8'></div>
-            <div className='skeleton h-6 ml-8'></div>
-            <div className='skeleton h-6'></div>
-            <div className='skeleton h-6 ml-8'></div>
-            <div className='skeleton h-6 ml-8'></div>
-          </div>
-        }
-      </div>
-      <div className="col-span-4 flex flex-col overflow-hidden">
+    <div className='flex h-full'>
+      {
+        showSidebar &&
+        <div className="w-1/5 border-base-300 border-r-1 overflow-y-auto">
+          <h1 className="text-xl font-black p-5 pb-3">目录</h1>
+          {
+            initialized ?
+            <ul className="menu w-full">
+              {outline.map(item => 
+                <li key={item.title}>
+                  {
+                    item.items.length ? 
+                    <details>
+                      <summary><a href='#' onClick={() => gotoDest(item.dest)}>{ item.title }</a></summary>
+                      <ul>
+                        { item.items.map((subitem: any) => 
+                          <li key={subitem.title}><a href='#' onClick={() => gotoDest(subitem.dest)}>{ subitem.title }</a></li>
+                        )}
+                      </ul>
+                    </details> :
+                    <a href='#' onClick={() => gotoDest(item.dest)}>{ item.title }</a>
+                  }
+                </li>
+              )}
+            </ul> :
+            <div className='flex w-full flex-col gap-2 px-5 mt-3'>
+              <div className='skeleton h-6'></div>
+              <div className='skeleton h-6 ml-8'></div>
+              <div className='skeleton h-6 ml-8'></div>
+              <div className='skeleton h-6'></div>
+              <div className='skeleton h-6 ml-8'></div>
+              <div className='skeleton h-6 ml-8'></div>
+              <div className='skeleton h-6'></div>
+              <div className='skeleton h-6 ml-8'></div>
+              <div className='skeleton h-6 ml-8'></div>
+            </div>
+          }
+        </div>
+      }
+      <div className="flex w-full flex-col overflow-hidden relative">
         <div className="flex gap-2 p-3 justify-center z-100">
           {
             initialized ? <>
+              <button className="btn btn-sm btn-sm absolute top-3 left-3 z-10" onClick={() => setShowSidebar(!showSidebar)}>{ showSidebar ? '< Hide' : '> Show' }</button>
               <button className="btn btn-sm btn-primary" onClick={previousPage} disabled={currentPage <= 0 || flipping}>Previous Page</button>
               <div className="flex flex-col justify-center">
                 <span className="text-sm font-light">{ currentPage + 1 } of { pages.length }</span>

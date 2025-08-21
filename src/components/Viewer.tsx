@@ -25,12 +25,24 @@ export default function Viewer(props: ViewerProps) {
   const documentRef = useRef<any>(null);
 
   useEffect(() => {
-    setHeight(viewportRef.current!.clientHeight - YPADDING);
-    setWidth(viewportRef.current!.clientWidth / 2 - XPADDING / 2);
     (async () => {
       const pages = [] as string[];
       const doc = await pdf.getDocument(props.url).promise;
       documentRef.current = doc;
+      
+      const max_height = viewportRef.current!.clientHeight - YPADDING;
+      const max_width = viewportRef.current!.clientWidth / 2 - XPADDING / 2;
+      const first_page = await doc.getPage(1);
+      const viewport = first_page.getViewport({ scale: 1.0 });
+      const aspect_ratio = viewport.width / viewport.height;
+      if (max_width / max_height > aspect_ratio) { // container is wider than pdf
+        setHeight(max_height);
+        setWidth(max_height * aspect_ratio);
+      } else {
+        setWidth(max_width);
+        setHeight(max_width / aspect_ratio);
+      }
+
       for (let i = 1; i <= doc.numPages; ++i) {
         const page = await doc.getPage(i);
         const viewport = page.getViewport({ scale: 2.5 });

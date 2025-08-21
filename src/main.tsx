@@ -4,7 +4,7 @@ import './index.css'
 import App from './App.tsx'
 
 import * as pdf from 'pdfjs-dist';
-pdf.GlobalWorkerOptions.workerSrc = '/js/pdf.worker.mjs';
+pdf.GlobalWorkerOptions.workerSrc = '/js/pdf.worker.min.mjs';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

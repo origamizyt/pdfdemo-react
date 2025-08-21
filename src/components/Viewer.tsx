@@ -144,14 +144,24 @@ export default function Viewer(props: ViewerProps) {
         <div className="flex gap-2 p-3 justify-center z-100">
           {
             initialized ? <>
-              <button className="btn btn-sm btn-sm absolute top-3 left-3 z-10" onClick={() => setShowSidebar(!showSidebar)}>{ showSidebar ? '< Hide' : '> Show' }</button>
-              <button className="btn btn-sm btn-primary" onClick={previousPage} disabled={currentPage <= 0 || flipping}>Previous Page</button>
+              <button className="btn btn-sm absolute top-3 left-3 z-10" onClick={() => setShowSidebar(!showSidebar)}>
+                {
+                  showSidebar ? 
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M17.488 4.43a.75.75 0 0 1 .081 1.058L11.988 12l5.581 6.512a.75.75 0 1 1-1.139.976l-6-7a.75.75 0 0 1 0-.976l6-7a.75.75 0 0 1 1.058-.081Zm-4 0a.75.75 0 0 1 .081 1.058L7.988 12l5.581 6.512a.75.75 0 1 1-1.138.976l-6-7a.75.75 0 0 1 0-.976l6-7a.75.75 0 0 1 1.057-.081Z" clip-rule="evenodd"/></svg>
+                  : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M6.512 4.43a.75.75 0 0 1 1.057.082l6 7a.75.75 0 0 1 0 .976l-6 7a.75.75 0 0 1-1.138-.976L12.012 12L6.431 5.488a.75.75 0 0 1 .08-1.057Zm4 0a.75.75 0 0 1 1.058.082l6 7a.75.75 0 0 1 0 .976l-6 7a.75.75 0 0 1-1.14-.976L16.013 12l-5.581-6.512a.75.75 0 0 1 .081-1.057Z" clip-rule="evenodd"/></svg> 
+                }
+              </button>
+              <button className="btn btn-sm btn-ghost" onClick={previousPage} disabled={currentPage <= 0 || flipping}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M10.53 5.47a.75.75 0 0 1 0 1.06l-4.72 4.72H20a.75.75 0 0 1 0 1.5H5.81l4.72 4.72a.75.75 0 1 1-1.06 1.06l-6-6a.75.75 0 0 1 0-1.06l6-6a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd"/></svg>
+              </button>
               <div className="flex flex-col justify-center">
                 <span className="text-sm font-light">{ currentPage + 1 } of { pages.length }</span>
               </div>
-              <button className="btn btn-sm btn-primary" onClick={nextPage} disabled={currentPage >= pages.length - 1 || flipping}>Next Page</button>
+              <button className="btn btn-sm btn-ghost" onClick={nextPage} disabled={currentPage >= pages.length - 1 || flipping}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M13.47 5.47a.75.75 0 0 1 1.06 0l6 6a.75.75 0 0 1 0 1.06l-6 6a.75.75 0 1 1-1.06-1.06l4.72-4.72H4a.75.75 0 0 1 0-1.5h14.19l-4.72-4.72a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg>
+              </button>
               <input type="text" className="input input-sm max-w-[100px]" placeholder="Page to Go" value={gotoText} onChange={e => setGotoText(e.target.value)}/>
-              <button className="btn btn-secondary btn-sm" disabled={!isFinite(gotoPage) || gotoPage <= 0 || gotoPage > pages.length || flipping} onClick={goto}>Go</button>
+              <button className="btn btn-primary btn-sm" disabled={!isFinite(gotoPage) || gotoPage <= 0 || gotoPage > pages.length || flipping} onClick={goto}>Go</button>
             </> : undefined
           }
         </div>

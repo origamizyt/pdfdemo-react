@@ -6,6 +6,7 @@ export interface LazyPageProps {
   pageIndex: number,
   currentPage: number,
   requireDataUrl(index: number): Promise<string>
+  onLoad?(): void
 }
 
 export const LazyPage = forwardRef<HTMLDivElement, LazyPageProps>((props, ref) => {
@@ -13,7 +14,13 @@ export const LazyPage = forwardRef<HTMLDivElement, LazyPageProps>((props, ref) =
   const [dataUrl, setDataUrl] = useState<string>()
   useEffect(() => {
     if (show) {
-      props.requireDataUrl(props.pageIndex).then(dataUrl => setDataUrl(dataUrl));
+      if (!dataUrl)
+        props.requireDataUrl(props.pageIndex).then(dataUrl => {
+          setDataUrl(dataUrl);
+          props.onLoad?.();
+        });
+      else
+        props.onLoad?.();
     }
     else {
       setDataUrl(undefined);

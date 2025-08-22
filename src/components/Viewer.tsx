@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import HTMLFlipBook from "react-pageflip"
 import * as pdf from 'pdfjs-dist'
 import { LazyPage } from "./LazyPage";
+import { CaretLeftIcon, CaretRightIcon, CaretLineLeftIcon, CaretLineRightIcon, SidebarIcon, CaretDoubleLeftIcon } from "@phosphor-icons/react";
 
 const FlipBook: any = HTMLFlipBook;
 const XPADDING = 120;
@@ -22,17 +23,33 @@ export default function Viewer(props: ViewerProps) {
   const [height, setHeight] = useState(0);
   const [flipping, setFlipping] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const [loading, setLoading] = useState(false);
   const flipRef = useRef<any>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const documentRef = useRef<any>(null);
 
   useEffect(() => {
+    // mobile screen, close sidebar
+    if (isMobile) {
+      setShowSidebar(false);
+    }
+  }, [isMobile]);
+
+  useEffect(() => {
+    const isMobile = window.matchMedia('(max-width: 48rem)').matches;
+    setIsMobile(isMobile);
     (async () => {
       const doc = await pdf.getDocument(props.url).promise;
       documentRef.current = doc;
       
-      const max_height = viewportRef.current!.clientHeight - YPADDING;
-      const max_width = viewportRef.current!.clientWidth / 2 - XPADDING / 2;
+      let max_height = viewportRef.current!.clientHeight;
+      let max_width = viewportRef.current!.clientWidth;
+      if (!isMobile) {
+        max_height -= YPADDING;
+        max_width -= XPADDING;
+        max_width /= 2;
+      }
       const first_page = await doc.getPage(1);
       const viewport = first_page.getViewport({ scale: 1.0 });
       const aspect_ratio = viewport.width / viewport.height;
@@ -50,6 +67,14 @@ export default function Viewer(props: ViewerProps) {
     })();
   }, [showSidebar]);
 
+  function firstPage() {
+    flipRef.current.pageFlip().turnToPage(0);
+  }
+
+  function lastPage() {
+    flipRef.current.pageFlip().turnToPage(pages - 1);
+  }
+
   function previousPage() {
     flipRef.current.pageFlip().flipPrev();
   }
@@ -66,6 +91,14 @@ export default function Viewer(props: ViewerProps) {
     }
     const pageIndex = await doc.getPageIndex(dest![0]);
     flipRef.current.pageFlip().turnToPage(pageIndex);
+
+    if (pageIndex !== currentPage)
+      setLoading(true);
+
+    // mobile screen, close sidebar
+    if (isMobile) {
+      setShowSidebar(false);
+    }
   }
   
   const gotoPage = parseInt(gotoText);
@@ -73,6 +106,8 @@ export default function Viewer(props: ViewerProps) {
   function goto() {
     flipRef.current.pageFlip().turnToPage(gotoPage-1);
     setGotoText('');
+    if (gotoPage - 1 !== currentPage)
+      setLoading(true);
   }
 
   function onChangeState(e: any) {
@@ -101,29 +136,47 @@ export default function Viewer(props: ViewerProps) {
     return canvas.toDataURL();
   }
 
+  function renderOutlineItems(items: any[]) {
+    return <>
+      {items.map(item => 
+        <li key={item.title}>
+          {
+            item.items.length ? 
+            <details>
+              <summary><a href='#' onClick={() => gotoDest(item.dest)}>{ item.title }</a></summary>
+              <ul>
+                {renderOutlineItems(item.items)}
+              </ul>
+            </details> :
+            <a href='#' onClick={() => gotoDest(item.dest)}>{ item.title }</a>
+          }
+        </li>
+      )}
+    </>
+  }
+
   return (
-    <div className='flex h-full'>
-      <div className="w-1/5 border-base-300 border-r-1 overflow-y-auto transition-all" style={{ marginLeft: showSidebar ? 0 : '-20%'}}>
-        <h1 className="text-xl font-black p-5 pb-3">目录</h1>
+    <div className='flex h-full relative'>
+      {
+        loading &&
+        <div className='absolute top-0 left-0 w-full h-full bg-white/20 backdrop-opacity-10 flex flex-col justify-center z-300'>
+          <div className='text-center'>
+            <span className='loading loading-bars loading-xl'></span>
+            <p className='mt-2 font-light'>Loading...</p>
+          </div>
+      </div>
+      }
+      <div className="w-full md:w-1/5 border-base-300 border-r-1 overflow-y-auto transition-all absolute md:static h-full z-200 bg-base-100" style={{ marginLeft: showSidebar ? 0 : '-20%', transform: showSidebar ? 'none' : 'translateX(-80%)'}}>
+        <div className="flex justify-between p-5 pb-3">
+          <h1 className="text-xl font-black">目录</h1>
+          <button className="btn btn-sm md:hidden" onClick={() => setShowSidebar(!showSidebar)}>
+            <CaretDoubleLeftIcon weight="fill" size={18}/>
+          </button>
+        </div>
         {
           initialized ?
           <ul className="menu w-full">
-            {outline && outline.map(item => 
-              <li key={item.title}>
-                {
-                  item.items.length ? 
-                  <details>
-                    <summary><a href='#' onClick={() => gotoDest(item.dest)}>{ item.title }</a></summary>
-                    <ul>
-                      { item.items.map((subitem: any) => 
-                        <li key={subitem.title}><a href='#' onClick={() => gotoDest(subitem.dest)}>{ subitem.title }</a></li>
-                      )}
-                    </ul>
-                  </details> :
-                  <a href='#' onClick={() => gotoDest(item.dest)}>{ item.title }</a>
-                }
-              </li>
-            )}
+            {outline && renderOutlineItems(outline)}
           </ul> :
           <div className='flex w-full flex-col gap-2 px-5 mt-3'>
             <div className='skeleton h-6'></div>
@@ -139,32 +192,32 @@ export default function Viewer(props: ViewerProps) {
         }
       </div>
       <div className="flex w-full flex-col overflow-hidden relative">
-        <div className="flex gap-2 p-3 justify-center z-100">
+        <div className="flex md:gap-2 p-3 justify-end md:justify-center z-100">
           {
             initialized ? <>
               <button className="btn btn-sm absolute top-3 left-3 z-10" onClick={() => setShowSidebar(!showSidebar)}>
                 {
                   showSidebar ? 
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" fillRule="evenodd" d="M17.488 4.43a.75.75 0 0 1 .081 1.058L11.988 12l5.581 6.512a.75.75 0 1 1-1.139.976l-6-7a.75.75 0 0 1 0-.976l6-7a.75.75 0 0 1 1.058-.081Zm-4 0a.75.75 0 0 1 .081 1.058L7.988 12l5.581 6.512a.75.75 0 1 1-1.138.976l-6-7a.75.75 0 0 1 0-.976l6-7a.75.75 0 0 1 1.057-.081Z" clipRule="evenodd"/></svg>
-                  : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" fillRule="evenodd" d="M6.512 4.43a.75.75 0 0 1 1.057.082l6 7a.75.75 0 0 1 0 .976l-6 7a.75.75 0 0 1-1.138-.976L12.012 12L6.431 5.488a.75.75 0 0 1 .08-1.057Zm4 0a.75.75 0 0 1 1.058.082l6 7a.75.75 0 0 1 0 .976l-6 7a.75.75 0 0 1-1.14-.976L16.013 12l-5.581-6.512a.75.75 0 0 1 .081-1.057Z" clipRule="evenodd"/></svg> 
+                  <CaretDoubleLeftIcon weight="fill" size={18}/>
+                  : <SidebarIcon weight="fill" size={18}/>
                 }
               </button>
-              <button className="btn btn-ghost btn-sm" onClick={() => flipRef.current.pageFlip().turnToPage(0)} disabled={currentPage === 0 || flipping}> 
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><g fill="currentColor"><path d="M17.75 19a.75.75 0 0 1-1.32.488l-6-7a.75.75 0 0 1 0-.976l6-7A.75.75 0 0 1 17.75 5v14Z" opacity=".5"/><path fillRule="evenodd" d="M13.488 19.57a.75.75 0 0 0 .081-1.058L7.988 12l5.581-6.512a.75.75 0 1 0-1.138-.976l-6 7a.75.75 0 0 0 0 .976l6 7a.75.75 0 0 0 1.057.082Z" clipRule="evenodd"/></g></svg>
+              <button className="btn btn-ghost btn-sm" onClick={firstPage} disabled={currentPage === 0 || flipping}> 
+                <CaretLineLeftIcon weight="duotone" size={18}/>
               </button>
               <button className="btn btn-sm btn-ghost" onClick={previousPage} disabled={currentPage <= 0 || flipping}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" fillRule="evenodd" d="M10.53 5.47a.75.75 0 0 1 0 1.06l-4.72 4.72H20a.75.75 0 0 1 0 1.5H5.81l4.72 4.72a.75.75 0 1 1-1.06 1.06l-6-6a.75.75 0 0 1 0-1.06l6-6a.75.75 0 0 1 1.06 0Z" clipRule="evenodd"/></svg>
+                <CaretLeftIcon weight="duotone" size={18}/>
               </button>
               <div className="flex flex-col justify-center">
-                <span className="text-sm font-light">{ currentPage + 1 } of { pages }</span>
+                <span className="text-xs md:text-sm font-light">{ currentPage + 1 } {isMobile ? "/" : "of"} { pages }</span>
               </div>
               <button className="btn btn-sm btn-ghost" onClick={nextPage} disabled={currentPage >= pages - 1 || flipping}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" fillRule="evenodd" d="M13.47 5.47a.75.75 0 0 1 1.06 0l6 6a.75.75 0 0 1 0 1.06l-6 6a.75.75 0 1 1-1.06-1.06l4.72-4.72H4a.75.75 0 0 1 0-1.5h14.19l-4.72-4.72a.75.75 0 0 1 0-1.06Z" clipRule="evenodd"/></svg>
+                <CaretRightIcon weight="duotone" size={18}/>
               </button>
-              <button className="btn btn-ghost btn-sm" onClick={() => flipRef.current.pageFlip().turnToPage(pages - 1)} disabled={currentPage === pages - 1 || flipping}> 
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><g fill="currentColor"><path d="M6.25 19a.75.75 0 0 0 1.32.488l6-7a.75.75 0 0 0 0-.976l-6-7A.75.75 0 0 0 6.25 5v14Z" opacity=".5"/><path fillRule="evenodd" d="M10.512 19.57a.75.75 0 0 1-.081-1.058L16.012 12l-5.581-6.512a.75.75 0 1 1 1.139-.976l6 7a.75.75 0 0 1 0 .976l-6 7a.75.75 0 0 1-1.058.082Z" clipRule="evenodd"/></g></svg>
+              <button className="btn btn-ghost btn-sm" onClick={lastPage} disabled={currentPage === pages - 1 || flipping}> 
+                <CaretLineRightIcon weight="duotone" size={18}/>
               </button>
-              <input type="text" className="input input-sm max-w-[100px]" placeholder="Page to Go" value={gotoText} onChange={e => setGotoText(e.target.value)}/>
+              <input type="text" className="input input-sm max-w-[100px] mr-1 md:mr-0" placeholder="Page to Go" value={gotoText} onChange={e => setGotoText(e.target.value)}/>
               <button className="btn btn-primary btn-sm" disabled={!isFinite(gotoPage) || gotoPage <= 0 || gotoPage > pages || flipping} onClick={goto}>Go</button>
             </> : undefined
           }
@@ -176,9 +229,14 @@ export default function Viewer(props: ViewerProps) {
               <div className='skeleton w-full h-full'></div>
             </div>
           }
-          <FlipBook width={width} height={height} ref={flipRef} onInit={() => setInitialized(true)} onFlip={(e: any) => setCurrentPage(e.data)} onChangeState={onChangeState} flippingTime={500} usePortrait={false} showCover>
+          <FlipBook width={width} height={height} ref={flipRef} onInit={() => {
+            setInitialized(true);
+            setLoading(true);
+          }} onFlip={(e: any) => setCurrentPage(e.data)} onChangeState={onChangeState} flippingTime={500} usePortrait={isMobile} showCover>
             {Array(pages).fill(null).map((_, index) =>
-              <LazyPage pageIndex={index} currentPage={currentPage} requireDataUrl={requireDataUrl} key={index}/>
+              <LazyPage pageIndex={index} currentPage={currentPage} requireDataUrl={requireDataUrl} key={index} onLoad={() => {
+                if (currentPage === index) setLoading(false);
+              }}/>
             )}
           </FlipBook>
         </div>

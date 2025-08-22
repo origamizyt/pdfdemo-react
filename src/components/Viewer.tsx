@@ -1,19 +1,20 @@
 import { useEffect, useRef, useState } from "react"
 import HTMLFlipBook from "react-pageflip"
 import * as pdf from 'pdfjs-dist'
+import { LazyPage } from "./LazyPage";
 
 const FlipBook: any = HTMLFlipBook;
 const XPADDING = 120;
 const YPADDING = 60;
-const YTRANSLATE = -30;
+const YTRANSLATE = -10;
 
 export interface ViewerProps {
   url: string
 }
 
 export default function Viewer(props: ViewerProps) {
-  const [pages, setPages] = useState([] as string[]);
-  const [outline, setOutline] = useState([] as any[]);
+  const [pages, setPages] = useState(0);
+  const [outline, setOutline] = useState<any[] | null>([]);
   const [initialized, setInitialized] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [gotoText, setGotoText] = useState('');
@@ -27,7 +28,6 @@ export default function Viewer(props: ViewerProps) {
 
   useEffect(() => {
     (async () => {
-      const pages = [] as string[];
       const doc = await pdf.getDocument(props.url).promise;
       documentRef.current = doc;
       
@@ -36,6 +36,7 @@ export default function Viewer(props: ViewerProps) {
       const first_page = await doc.getPage(1);
       const viewport = first_page.getViewport({ scale: 1.0 });
       const aspect_ratio = viewport.width / viewport.height;
+      console.log(max_height, max_width, aspect_ratio);
       if (max_width / max_height > aspect_ratio) { // container is wider than pdf
         setHeight(max_height);
         setWidth(max_height * aspect_ratio);
@@ -44,25 +45,8 @@ export default function Viewer(props: ViewerProps) {
         setHeight(max_width / aspect_ratio);
       }
 
-      for (let i = 1; i <= doc.numPages; ++i) {
-        const page = await doc.getPage(i);
-        const viewport = page.getViewport({ scale: 2.5 });
-        const canvas = document.createElement('canvas');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-        const context = canvas.getContext('2d')!;
-
-        await page.render({
-          viewport,
-          canvas,
-          canvasContext: context,
-        }).promise;
-
-        pages.push(canvas.toDataURL());
-      };
-
       setOutline(await doc.getOutline());
-      setPages(pages);
+      setPages(doc.numPages);
     })();
   }, [showSidebar]);
 
@@ -100,6 +84,23 @@ export default function Viewer(props: ViewerProps) {
     }
   }
 
+  async function requireDataUrl(index: number): Promise<string> {
+    const page = await documentRef.current.getPage(index + 1);
+    const viewport = page.getViewport({ scale: 2.5 });
+    const canvas = document.createElement('canvas');
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+    const context = canvas.getContext('2d')!;
+
+    await page.render({
+      viewport, 
+      canvas,
+      canvasContext: context,
+    }).promise;
+
+    return canvas.toDataURL();
+  }
+
   return (
     <div className='flex h-full'>
       <div className="w-1/5 border-base-300 border-r-1 overflow-y-auto transition-all" style={{ marginLeft: showSidebar ? 0 : '-20%'}}>
@@ -107,7 +108,7 @@ export default function Viewer(props: ViewerProps) {
         {
           initialized ?
           <ul className="menu w-full">
-            {outline.map(item => 
+            {outline && outline.map(item => 
               <li key={item.title}>
                 {
                   item.items.length ? 
@@ -155,29 +156,29 @@ export default function Viewer(props: ViewerProps) {
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" fillRule="evenodd" d="M10.53 5.47a.75.75 0 0 1 0 1.06l-4.72 4.72H20a.75.75 0 0 1 0 1.5H5.81l4.72 4.72a.75.75 0 1 1-1.06 1.06l-6-6a.75.75 0 0 1 0-1.06l6-6a.75.75 0 0 1 1.06 0Z" clipRule="evenodd"/></svg>
               </button>
               <div className="flex flex-col justify-center">
-                <span className="text-sm font-light">{ currentPage + 1 } of { pages.length }</span>
+                <span className="text-sm font-light">{ currentPage + 1 } of { pages }</span>
               </div>
-              <button className="btn btn-sm btn-ghost" onClick={nextPage} disabled={currentPage >= pages.length - 1 || flipping}>
+              <button className="btn btn-sm btn-ghost" onClick={nextPage} disabled={currentPage >= pages - 1 || flipping}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" fillRule="evenodd" d="M13.47 5.47a.75.75 0 0 1 1.06 0l6 6a.75.75 0 0 1 0 1.06l-6 6a.75.75 0 1 1-1.06-1.06l4.72-4.72H4a.75.75 0 0 1 0-1.5h14.19l-4.72-4.72a.75.75 0 0 1 0-1.06Z" clipRule="evenodd"/></svg>
               </button>
-              <button className="btn btn-ghost btn-sm" onClick={() => flipRef.current.pageFlip().turnToPage(pages.length - 1)} disabled={currentPage === pages.length - 1 || flipping}> 
+              <button className="btn btn-ghost btn-sm" onClick={() => flipRef.current.pageFlip().turnToPage(pages - 1)} disabled={currentPage === pages - 1 || flipping}> 
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><g fill="currentColor"><path d="M6.25 19a.75.75 0 0 0 1.32.488l6-7a.75.75 0 0 0 0-.976l-6-7A.75.75 0 0 0 6.25 5v14Z" opacity=".5"/><path fillRule="evenodd" d="M10.512 19.57a.75.75 0 0 1-.081-1.058L16.012 12l-5.581-6.512a.75.75 0 1 1 1.139-.976l6 7a.75.75 0 0 1 0 .976l-6 7a.75.75 0 0 1-1.058.082Z" clipRule="evenodd"/></g></svg>
               </button>
               <input type="text" className="input input-sm max-w-[100px]" placeholder="Page to Go" value={gotoText} onChange={e => setGotoText(e.target.value)}/>
-              <button className="btn btn-primary btn-sm" disabled={!isFinite(gotoPage) || gotoPage <= 0 || gotoPage > pages.length || flipping} onClick={goto}>Go</button>
+              <button className="btn btn-primary btn-sm" disabled={!isFinite(gotoPage) || gotoPage <= 0 || gotoPage > pages || flipping} onClick={goto}>Go</button>
             </> : undefined
           }
         </div>
-        <div className="flex-grow flex justify-center relative" ref={viewportRef} style={{ transform: initialized ? `translateY(${YTRANSLATE}px)`: 'none' }}>
+        <div className="flex-grow flex justify-center relative max-h-[calc(100%-56px)]" ref={viewportRef} style={{ transform: initialized ? `translateY(${YTRANSLATE}px)`: 'none' }}>
           {
             !initialized && 
             <div className='w-full p-10 absolute h-full'>
               <div className='skeleton w-full h-full'></div>
             </div>
           }
-          <FlipBook width={width} height={height} ref={flipRef} onInit={() => setInitialized(true)} onFlip={(e: any) => setCurrentPage(e.data)} onChangeState={onChangeState} flippingTime={500}>
-            {pages.map((dataUrl, index) => 
-              <img src={dataUrl} alt={`Page ${index}`} key={index}/>
+          <FlipBook width={width} height={height} ref={flipRef} onInit={() => setInitialized(true)} onFlip={(e: any) => setCurrentPage(e.data)} onChangeState={onChangeState} flippingTime={500} usePortrait={false} showCover>
+            {Array(pages).fill(null).map((_, index) =>
+              <LazyPage pageIndex={index} currentPage={currentPage} requireDataUrl={requireDataUrl} key={index}/>
             )}
           </FlipBook>
         </div>

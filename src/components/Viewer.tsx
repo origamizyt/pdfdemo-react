@@ -94,6 +94,8 @@ export default function Viewer(props: ViewerProps) {
 
     if (pageIndex !== currentPage)
       setLoading(true);
+    
+    setCurrentPage(pageIndex);
 
     // mobile screen, close sidebar
     if (isMobile) {
@@ -108,6 +110,7 @@ export default function Viewer(props: ViewerProps) {
     setGotoText('');
     if (gotoPage - 1 !== currentPage)
       setLoading(true);
+    setCurrentPage(gotoPage - 1);
   }
 
   function onChangeState(e: any) {

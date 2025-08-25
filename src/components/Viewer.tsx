@@ -80,10 +80,12 @@ export default function Viewer(props: ViewerProps) {
   }, [showSidebar]);
 
   function firstPage() {
+    if (currentPage > 0) setLoading(true);
     flipRef.current.pageFlip().turnToPage(0);
   }
 
   function lastPage() {
+    if (currentPage < pages - 1) setLoading(true);
     flipRef.current.pageFlip().turnToPage(pages - 1);
   }
 

@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react"
 import HTMLFlipBook from "react-pageflip"
 import * as pdf from 'pdfjs-dist'
 import { LazyPage } from "./LazyPage";
-import { CaretLeftIcon, CaretRightIcon, CaretLineLeftIcon, CaretLineRightIcon, SidebarIcon, CaretDoubleLeftIcon } from "@phosphor-icons/react";
+import { CaretLeftIcon, CaretRightIcon, CaretLineLeftIcon, CaretLineRightIcon, SidebarIcon, CaretDoubleLeftIcon, CursorClickIcon, ArrowLineDownRightIcon, ArrowLineUpRightIcon, ArrowLineDownLeftIcon, ArrowLineUpLeftIcon, HandSwipeLeftIcon, HandSwipeRightIcon } from "@phosphor-icons/react";
+import useLocalStorage from "../hooks/useLocalStorage";
 
 const FlipBook: any = HTMLFlipBook;
 const XPADDING = 120;
@@ -10,7 +11,8 @@ const YPADDING = 60;
 const YTRANSLATE = -10;
 
 export interface ViewerProps {
-  url: string
+  url: string,
+  children?: any
 }
 
 export default function Viewer(props: ViewerProps) {
@@ -25,6 +27,11 @@ export default function Viewer(props: ViewerProps) {
   const [showSidebar, setShowSidebar] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [shouldShowHint, setShouldShowHint] = useLocalStorage({
+    key: 'should-show-hint',
+    default: true,
+  })
+  const [hint, setHint] = useState({ top: 0, left: 0, height: 0, width: 0, show: false });
   const flipRef = useRef<any>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const documentRef = useRef<any>(null);
@@ -35,6 +42,12 @@ export default function Viewer(props: ViewerProps) {
       setShowSidebar(false);
     }
   }, [isMobile]);
+
+  useEffect(() => {
+    if (!loading && flipRef.current.pageFlip() && shouldShowHint) {
+      showHint();
+    }
+  }, [loading]);
 
   useEffect(() => {
     const isMobile = window.matchMedia('(max-width: 48rem)').matches;
@@ -53,7 +66,6 @@ export default function Viewer(props: ViewerProps) {
       const first_page = await doc.getPage(1);
       const viewport = first_page.getViewport({ scale: 1.0 });
       const aspect_ratio = viewport.width / viewport.height;
-      console.log(max_height, max_width, aspect_ratio);
       if (max_width / max_height > aspect_ratio) { // container is wider than pdf
         setHeight(max_height);
         setWidth(max_height * aspect_ratio);
@@ -146,16 +158,35 @@ export default function Viewer(props: ViewerProps) {
           {
             item.items.length ? 
             <details>
-              <summary><a href='#' onClick={() => gotoDest(item.dest)}>{ item.title }</a></summary>
+              <summary><span onClick={() => gotoDest(item.dest)}>{ item.title }</span></summary>
               <ul>
                 {renderOutlineItems(item.items)}
               </ul>
             </details> :
-            <a href='#' onClick={() => gotoDest(item.dest)}>{ item.title }</a>
+            <span onClick={() => gotoDest(item.dest)}>{ item.title }</span>
           }
         </li>
       )}
     </>
+  }
+
+  function showHint() {
+    const rect = flipRef.current.pageFlip().ui.parentElement.getBoundingClientRect();
+    setHint({
+      top: rect.top,
+      left: rect.left,
+      width: rect.width,
+      height: rect.height,
+      show: true
+    });
+  }
+
+  function hideHint() {
+    setHint({
+      ...hint,
+      show: false
+    });
+    setShouldShowHint(false);
   }
 
   return (
@@ -169,8 +200,69 @@ export default function Viewer(props: ViewerProps) {
           </div>
       </div>
       }
+      { hint.show &&
+        <div className='absolute top-0 left-0 w-full h-full backdrop-blur-xs bg-black/50 z-250' onMouseDown={hideHint}>
+          <div className='relative border-base-content/50 border-dashed border-2 grid grid-cols-2' style={{
+            top: `${hint.top}px`,
+            left: `${hint.left}px`,
+            width: `${hint.width}px`,
+            height: `${hint.height}px`,
+          }}>
+            <div className='border-r-1 border-base-content/50 border-dashed h-full flex flex-col justify-center'>
+              <div className='text-center'>
+                { isMobile ? 
+                  <HandSwipeLeftIcon size={50} className='inline-block' weight="duotone"/> :
+                  <CursorClickIcon size={50} className='inline-block' weight="duotone"/>
+                }
+                <p className='font-bold'>点击左侧向前翻页</p>
+              </div>
+            </div>
+            <div className='border-l-1 border-base-content/50 border-dashed h-full flex flex-col justify-center'>
+              <div className='text-center'>
+                { isMobile ? 
+                  <HandSwipeRightIcon size={50} className='inline-block' weight="duotone"/> :
+                  <CursorClickIcon size={50} className='inline-block' weight="duotone"/>
+                }
+                <p className='font-bold'>点击右侧向后翻页</p>
+              </div>
+            </div>
+            { !isMobile &&
+              <>
+                <div className='absolute top-0 left-0 p-1 flex gap-2'>
+                  <ArrowLineDownRightIcon size={30} weight='duotone'/>
+                  <div className='flex flex-col justify-center text-sm'>
+                    向右下拖拽翻页
+                  </div>
+                </div>
+                <div className='absolute bottom-0 left-0 p-1 flex gap-2'>
+                  <ArrowLineUpRightIcon size={30} weight='duotone'/>
+                  <div className='flex flex-col justify-center text-sm'>
+                    向右上拖拽翻页
+                  </div>
+                </div>
+              </>
+            }
+            <div className='absolute top-0 right-0 p-1 flex gap-2'>
+              <ArrowLineDownLeftIcon size={30} weight='duotone'/>
+              <div className='flex flex-col justify-center text-sm'>
+                向左下拖拽翻页
+              </div>
+            </div>
+            <div className='absolute bottom-0 right-0 p-1 flex gap-2'>
+              <ArrowLineUpLeftIcon size={30} weight='duotone'/>
+              <div className='flex flex-col justify-center text-sm'>
+                向左上拖拽翻页
+              </div>
+            </div>
+          </div>
+        </div>
+      }
       <div className="w-full md:w-1/5 border-base-300 border-r-1 overflow-y-auto transition-all absolute md:static h-full z-200 bg-base-100" style={{ marginLeft: showSidebar ? 0 : '-20%', transform: showSidebar ? 'none' : 'translateX(-80%)'}}>
-        <div className="flex justify-between p-5 pb-3">
+        
+        <div className='px-5 py-3'>
+          {props.children}
+        </div>
+        <div className="flex justify-between px-5 pb-3">
           <h1 className="text-xl font-black">目录</h1>
           <button className="btn btn-sm md:hidden" onClick={() => setShowSidebar(!showSidebar)}>
             <CaretDoubleLeftIcon weight="fill" size={18}/>
@@ -198,30 +290,30 @@ export default function Viewer(props: ViewerProps) {
         <div className="flex md:gap-2 p-3 justify-end md:justify-center z-100">
           {
             initialized ? <>
-              <button className="btn btn-sm absolute top-3 left-3 z-10" onClick={() => setShowSidebar(!showSidebar)}>
+              <button className="btn btn-xs md:btn-sm absolute top-3 left-3 z-10" onClick={() => setShowSidebar(!showSidebar)}>
                 {
                   showSidebar ? 
                   <CaretDoubleLeftIcon weight="fill" size={18}/>
                   : <SidebarIcon weight="fill" size={18}/>
                 }
               </button>
-              <button className="btn btn-ghost btn-sm" onClick={firstPage} disabled={currentPage === 0 || flipping}> 
+              <button className="btn btn-ghost btn-xs md:btn-sm" onClick={firstPage} disabled={currentPage === 0 || flipping}> 
                 <CaretLineLeftIcon weight="duotone" size={18}/>
               </button>
-              <button className="btn btn-sm btn-ghost" onClick={previousPage} disabled={currentPage <= 0 || flipping}>
+              <button className="btn btn-xs md:btn-sm btn-ghost" onClick={previousPage} disabled={currentPage <= 0 || flipping}>
                 <CaretLeftIcon weight="duotone" size={18}/>
               </button>
               <div className="flex flex-col justify-center">
                 <span className="text-xs md:text-sm font-light">{ currentPage + 1 } {isMobile ? "/" : "of"} { pages }</span>
               </div>
-              <button className="btn btn-sm btn-ghost" onClick={nextPage} disabled={currentPage >= pages - 1 || flipping}>
+              <button className="btn btn-xs md:btn-sm btn-ghost" onClick={nextPage} disabled={currentPage >= pages - 1 || flipping}>
                 <CaretRightIcon weight="duotone" size={18}/>
               </button>
-              <button className="btn btn-ghost btn-sm" onClick={lastPage} disabled={currentPage === pages - 1 || flipping}> 
+              <button className="btn btn-ghost btn-xs md:btn-sm" onClick={lastPage} disabled={currentPage === pages - 1 || flipping}> 
                 <CaretLineRightIcon weight="duotone" size={18}/>
               </button>
-              <input type="text" className="input input-sm max-w-[100px] mr-1 md:mr-0" placeholder="Page to Go" value={gotoText} onChange={e => setGotoText(e.target.value)}/>
-              <button className="btn btn-primary btn-sm" disabled={!isFinite(gotoPage) || gotoPage <= 0 || gotoPage > pages || flipping} onClick={goto}>Go</button>
+              <input type="text" className="input input-xs md:input-sm max-w-[100px] mr-1 md:mr-0" placeholder="Page to Go" value={gotoText} onChange={e => setGotoText(e.target.value)}/>
+              <button className="btn btn-primary btn-xs md:btn-sm" disabled={!isFinite(gotoPage) || gotoPage <= 0 || gotoPage > pages || flipping} onClick={goto}>Go</button>
             </> : undefined
           }
         </div>

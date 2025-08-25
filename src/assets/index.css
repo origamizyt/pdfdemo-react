@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@plugin "daisyui" {
+    themes: corporate --default, business --prefersdark;
+    exclude: rootscrollgutter;
+}
+
+@media (min-width: 48rem) {
+
+    .stf__item:first-child,
+    .stf__item:nth-child(2),
+    .stf__item:nth-child(3) {
+        top: 30px !important;
+    }
+
+    .stf__item:nth-last-child(5),
+    .stf__item:nth-last-child(6),
+    .stf__item:nth-last-child(7) {
+        top: 30px !important;
+    }
+
+    .stf__hardShadow,
+    .stf__hardInnerShadow {
+        top: 30px !important;
+    }
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        filter: blur(5px);
+    }
+}
+
+@keyframes fade-out {
+    to {
+        opacity: 0;
+        filter: blur(5px);
+    }
+}
+
+@keyframes slide-from-right {
+    from {
+        transform: translateX(30px);
+    }
+}
+
+@keyframes slide-to-left {
+    to {
+        transform: translateX(-30px);
+    }
+}
+
+::view-transition-old(root) {
+    animation: 180ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
+        600ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
+}
+
+::view-transition-new(root) {
+    animation: 420ms cubic-bezier(0, 0, 0.2, 1) 90ms both fade-in,
+        600ms cubic-bezier(0.4, 0, 0.2, 1) both slide-from-right;
+}
+
+@font-face {
+    font-family: "Manrope";
+    font-style: normal;
+    font-display: swap;
+    src: url('./manrope.ttf');
+}
+
+html, body, #root {
+    height: 100%;
+}
+
+* {
+    font-family: 'Manrope', sans-serif;
+}

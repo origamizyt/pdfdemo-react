@@ -1,0 +1,26 @@
+[
+    {
+        "id": "faculty-handbook",
+        "name": "清华大学教师手册",
+        "description": "Faculty Handbook",
+        "file": "/books/清华大学教师手册_outline.pdf",
+        "cover": "/imgs/cover-faculty-handbook.png",
+        "pages": 120
+    },
+    {
+        "id": "staff-handbook",
+        "name": "清华大学职工手册",
+        "description": "Staff Handbook",
+        "file": "/books/清华大学职工手册_outline.pdf",
+        "cover": "/imgs/cover-staff-handbook.png",
+        "pages": 72
+    },
+    {
+        "id": "faculty-staff-campus-life-guide",
+        "name": "清华大学教职工生活指南",
+        "description": "Faculty & Staff Campus Life Guide",
+        "file": "/books/清华大学教职工生活指南_outline.pdf",
+        "cover": "/imgs/cover-faculty-staff-campus-life-guide.png",
+        "pages": 104
+    }
+]

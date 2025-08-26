@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react"
 import HTMLFlipBook from "react-pageflip"
-import * as pdf from 'pdfjs-dist'
 import { LazyPage } from "./LazyPage";
 import { CaretLeftIcon, CaretRightIcon, CaretLineLeftIcon, CaretLineRightIcon, SidebarIcon, CaretDoubleLeftIcon, CursorClickIcon, ArrowLineDownRightIcon, ArrowLineUpRightIcon, ArrowLineDownLeftIcon, ArrowLineUpLeftIcon, HandSwipeLeftIcon, HandSwipeRightIcon } from "@phosphor-icons/react";
 import useLocalStorage from "../hooks/useLocalStorage";
@@ -53,6 +52,9 @@ export default function Viewer(props: ViewerProps) {
     const isMobile = window.matchMedia('(max-width: 48rem)').matches;
     setIsMobile(isMobile);
     (async () => {
+      const pdf = await import("pdfjs-dist");
+      pdf.GlobalWorkerOptions.workerSrc = '/js/pdf.worker.min.mjs';
+      
       const doc = await pdf.getDocument(props.url).promise;
       documentRef.current = doc;
       

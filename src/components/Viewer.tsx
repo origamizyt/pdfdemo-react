@@ -56,7 +56,7 @@ export default function Viewer(props: ViewerProps) {
     setIsMobile(isMobile);
     (async () => {
       const pdf = await import("pdfjs-dist");
-      pdf.GlobalWorkerOptions.workerSrc = basename + '/js/pdf.worker.min.mjs';
+      pdf.GlobalWorkerOptions.workerSrc = basename + '/js/pdf.worker.min.js';
       
       const doc = await pdf.getDocument(basename + props.url).promise;
       documentRef.current = doc;

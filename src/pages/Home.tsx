@@ -3,11 +3,14 @@ import { NavLink } from 'react-router'
 import books from '../assets/books.json'
 import { useEffect, useRef } from 'react'
 import { useHead } from '@unhead/react'
+import useBasename from '../hooks/useBasename'
 
 export default function Home() {
   useHead({
     title: '主页'
   })
+
+  const basename = useBasename();
 
   const carouselRef = useRef<HTMLDivElement>(null);
   // scroll restoration
@@ -45,7 +48,7 @@ export default function Home() {
                   <span className='font-black text-3xl'>{ book.name }</span>
                   <span className='font-light text-sm text-zinc-500'>{ book.description }</span>
                 </div>
-                <img src={book.cover} alt={book.name} className='md:max-h-7/8 rounded'/>
+                <img src={basename + book.cover} alt={book.name} className='md:max-h-7/8 rounded'/>
               </NavLink>
             </div>
             <div className="absolute left-5 right-5 top-1/2 flex -translate-y-1/2 transform justify-between">

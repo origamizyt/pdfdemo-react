@@ -3,11 +3,14 @@ import { BookOpenTextIcon, HouseIcon, ListIcon, XCircleIcon } from '@phosphor-ic
 import books from '../assets/books.json'
 import { useState } from 'react'
 import { useHead } from '@unhead/react'
+import useBasename from '../hooks/useBasename'
 
 export default function List() {
   useHead({
     title: '列表'
   })
+
+  const basename = useBasename();
 
   const [filteredBooks, setFilteredBooks] = useState(books);
   const [searchText, setSearchText] = useState('');
@@ -55,7 +58,7 @@ export default function List() {
           {
             filteredBooks.map(book => 
               <li className='list-row' key={book.id}>
-                <img src={book.cover} alt={book.name} className='max-h-20 rounded'/>
+                <img src={basename + book.cover} alt={book.name} className='max-h-20 rounded'/>
                 <div className='flex flex-col justify-center gap-2'>
                   <h2 className='font-black text-xl md:text-2xl'>
                     {book.name}

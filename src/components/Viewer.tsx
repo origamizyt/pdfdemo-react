@@ -3,6 +3,7 @@ import HTMLFlipBook from "react-pageflip"
 import { LazyPage } from "./LazyPage";
 import { CaretLeftIcon, CaretRightIcon, CaretLineLeftIcon, CaretLineRightIcon, SidebarIcon, CaretDoubleLeftIcon, CursorClickIcon, ArrowLineDownRightIcon, ArrowLineUpRightIcon, ArrowLineDownLeftIcon, ArrowLineUpLeftIcon, HandSwipeLeftIcon, HandSwipeRightIcon } from "@phosphor-icons/react";
 import useLocalStorage from "../hooks/useLocalStorage";
+import useBasename from "../hooks/useBasename";
 
 const FlipBook: any = HTMLFlipBook;
 const XPADDING = 120;
@@ -35,6 +36,8 @@ export default function Viewer(props: ViewerProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const documentRef = useRef<any>(null);
 
+  const basename = useBasename();
+
   useEffect(() => {
     // mobile screen, close sidebar
     if (isMobile) {
@@ -53,9 +56,9 @@ export default function Viewer(props: ViewerProps) {
     setIsMobile(isMobile);
     (async () => {
       const pdf = await import("pdfjs-dist");
-      pdf.GlobalWorkerOptions.workerSrc = '/js/pdf.worker.min.mjs';
+      pdf.GlobalWorkerOptions.workerSrc = basename + '/js/pdf.worker.min.mjs';
       
-      const doc = await pdf.getDocument(props.url).promise;
+      const doc = await pdf.getDocument(basename + props.url).promise;
       documentRef.current = doc;
       
       let max_height = viewportRef.current!.clientHeight;

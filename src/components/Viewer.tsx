@@ -55,7 +55,7 @@ export default function Viewer(props: ViewerProps) {
     const isMobile = window.matchMedia('(max-width: 48rem)').matches;
     setIsMobile(isMobile);
     (async () => {
-      const pdf = await import("pdfjs-dist");
+      const pdf = await import("pdfjs-dist/legacy/build/pdf.mjs");
       pdf.GlobalWorkerOptions.workerSrc = basename + '/js/pdf.worker.min.js';
       
       const doc = await pdf.getDocument(basename + props.url).promise;
@@ -209,7 +209,7 @@ export default function Viewer(props: ViewerProps) {
       }
       { hint.show &&
         <div className='absolute top-0 left-0 w-full h-full backdrop-blur-xs bg-black/50 z-250' onMouseDown={hideHint}>
-          <div className='relative border-base-content/50 border-dashed border-2 grid grid-cols-2' style={{
+          <div className='relative border-base-content/50 border-dashed border-2 grid grid-cols-2 bg-base-100/70' style={{
             top: `${hint.top}px`,
             left: `${hint.left}px`,
             width: `${hint.width}px`,
